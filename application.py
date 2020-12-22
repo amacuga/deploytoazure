@@ -1,80 +1,37 @@
-from flask import Flask, jsonify, request, abort
-from bookDAO import bookDAO
-from flask_cors import CORS
+from flask import Flask, url_for, request, abort, redirect
 
+app = Flask(__name__, static_url_path='', static_folder='staticpages')
 
-app = Flask(__name__, static_url_path='', static_folder='.')
-CORS(app)
-#app = Flask(__name__)
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
 
-#@app.route('/')
-#def index():
-#    return "Hello, World!"
+@app.route('/login')
+def login():
+    abort(401)
 
-#curl "http://127.0.0.1:5000/books"
-@app.route('/books')
-def getAll():
-    #print("in getall")
-    results = bookDAO.getAll()
-    return jsonify(results)
+@app.route('/user')
+def getUser():
+    return "served by getUser"
 
-#curl "http://127.0.0.1:5000/books/2"
-@app.route('/books/<int:id>')
-def findById(id):
-    foundBook = bookDAO.findByID(id)
+@app.route('/user/<int:id>')
+def findByIdUser(id):
+    return "served by findByIdUser with id =" + str(id)
 
-    return jsonify(foundBook)
+@app.route('/user', methods=['POST'])
+def createUser():
+    return "served by createUser"
 
-#curl  -i -H "Content-Type:application/json" -X POST -d "{\"Title\":\"hello\",\"Author\":\"someone\",\"Price\":123}" http://127.0.0.1:5000/books
-@app.route('/books', methods=['POST'])
-def create():
-    
-    if not request.json:
-        abort(400)
-    # other checking 
-    book = {
-        "Title": request.json['Title'],
-        "Author": request.json['Author'],
-        "Price": request.json['Price'],
-    }
-    values =(book['Title'],book['Author'],book['Price'])
-    newId = bookDAO.create(values)
-    book['id'] = newId
-    return jsonify(book)
+@app.route('/demo_url_for')
+def demoUrlFor():
+    returnString = "url For index is " + url_for('index')
+    returnString += "<br/>"
+    returnString += "url for findByIdUser " + url_for('findByIdUser', id=12)
+    return returnString
 
-#curl  -i -H "Content-Type:application/json" -X PUT -d "{\"Title\":\"hello\",\"Author\":\"someone\",\"Price\":123}" http://127.0.0.1:5000/books/1
-@app.route('/books/<int:id>', methods=['PUT'])
-def update(id):
-    foundBook = bookDAO.findByID(id)
-    if not foundBook:
-        abort(404)
-    
-    if not request.json:
-        abort(400)
-    reqJson = request.json
-    if 'Price' in reqJson and type(reqJson['Price']) is not int:
-        abort(400)
+@app.route('/demo_request', methods=['POST', 'GET', 'DELETE'])
+def demoRequest():
+    return request.method
 
-    if 'Title' in reqJson:
-        foundBook['Title'] = reqJson['Title']
-    if 'Author' in reqJson:
-        foundBook['Author'] = reqJson['Author']
-    if 'Price' in reqJson:
-        foundBook['Price'] = reqJson['Price']
-    values = (foundBook['Title'],foundBook['Author'],foundBook['Price'],foundBook['id'])
-    bookDAO.update(values)
-    return jsonify(foundBook)
-        
-
-    
-
-@app.route('/books/<int:id>' , methods=['DELETE'])
-def delete(id):
-    bookDAO.delete(id)
-    return jsonify({"done":True})
-
-
-
-
-if __name__ == '__main__' :
-    app.run(debug= True)
+if __name__=="__main__":
+    app.run(debug=True)
